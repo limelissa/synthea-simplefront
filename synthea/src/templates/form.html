@@ -1,0 +1,44 @@
+{% extends "bootstrap/base.html" %}
+{% import 'bootstrap/wtf.html' as wtf %}
+
+
+{% block javascript %}
+<!-- <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script> -->
+{% endblock %}
+
+{% block styles %}
+{{super()}}
+<link rel="stylesheet" type="text/css" href="form.css">
+<link rel="icon" href="data:,">
+{% endblock %}
+
+{% block title %}Synthea{% endblock %}
+
+{% block content %}
+    <div class="main">
+        <h1>Synthea Generator</h1>
+        <div class="row">
+            <!-- {{ wtf.quick_form(form) }} -->
+            <form method="POST" action="/" class="form-custom">
+                {{ form.csrf_token }}
+                <div class="form-group">{{ form.inputSeed.label }} {{ form.inputSeed(class_="form-control") }}</div>
+                <div class="form-group">{{ form.inputNbrPatient.label }} {{ form.inputNbrPatient(class_="form-control") }}</div>
+                <div class="form-group">{{ form.module.label }} {{ form.module(class_="form-control") }}</div>
+                <div class="form-group">{{ form.properties.label }} {{ form.properties(class_="form-control", rows="10") }}</div>
+                <input type="submit" class="btn btn-default generate" value="Generate" onclick="$('#loading').show();">
+                
+            </form>
+        </div>
+        <div id="loading" style="display:none;">
+            <div class="alert alert-info alert-dismissible" role="alert">
+                <span>Patients being generated, this may take a few minutes.</span>
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <img src="{{url_for('static', filename='loader.gif')}}" align="middle" />
+            
+        </div>
+    </div>
+    
+{% endblock %}

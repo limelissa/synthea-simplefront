@@ -1,0 +1,9 @@
+# Byte-compiled
+**__pycache__/
+
+# Virtual environment
+venv
+
+# Other
+**.DS_Store
+synthea/output/fhir

@@ -1,0 +1,20 @@
+version: '3.3'
+services:
+
+  synthea:
+    build: 
+       context: synthea
+    image: synthea-front-docker:latest
+    environment:
+      - SYNTHEA_SEED=1
+      - SYNTHEA_SIZE=1000
+      - FHIR_URL=http://fhir-iris:52773/synthea/fhir/r4/
+    ports:
+    - "5000:5000" 
+    volumes:
+    - type: bind
+      source: ./synthea/output/fhir
+      target: /synthea/output/fhir
+    - type: bind
+      source: ./synthea/src
+      target: /app

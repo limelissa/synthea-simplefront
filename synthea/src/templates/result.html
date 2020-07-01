@@ -1,0 +1,51 @@
+{% extends "bootstrap/base.html" %}
+{% import 'bootstrap/wtf.html' as wtf %}
+
+{% block styles %}
+{{super()}}
+<link rel="stylesheet" type="text/css" href="form.css">
+<link rel="icon" href="data:,">
+<link rel="stylesheet"
+          href="https://fonts.googleapis.com/css?family=Open+Sans">
+
+{% endblock %}
+
+{% block title %}Synthea{% endblock %}
+
+{% block content %}
+    <div class="result">
+        <h1>Synthea Generator</h1>
+        <div class="row files">
+            <form action="/result/download" method="POST"  class="form-custom">
+                <input type="submit" class="btn btn-default download" value="Download files">
+            </form>
+            
+            
+            <div class="panel-group">
+                {% if files %}
+                    {% for file in files %}
+                        <div class="panel panel-default file">
+                            <div class="panel-heading">
+                                <h4 class="panel-title">
+                                    <a data-toggle="collapse" href={{ '#' ~ loop.index }}>{{file[0]}}</a>
+                                </h4>
+                            </div>
+                            <div id={{loop.index}} class="panel-collapse collapse">
+                                <div class="panel-body">
+                                    <textarea class="form-control" rows="15">{{ file[1] }}</textarea>
+                                </div>
+                                <form action="/result/send" method="POST">
+                                    <input type="submit" class="btn btn-link" value="Send to FHIR repository">
+                                </form>
+                            </div>
+                        </div>
+                        
+                    {% endfor %}
+                {% endif %}
+            </div>
+
+        </div>
+    </div>
+
+    
+{% endblock %}
