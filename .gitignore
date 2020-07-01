@@ -6,4 +6,4 @@ venv
 
 # Other
 **.DS_Store
-synthea/output/fhir
+frontend/output/fhir

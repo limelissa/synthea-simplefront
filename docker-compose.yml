@@ -3,7 +3,7 @@ services:
 
   synthea:
     build: 
-       context: synthea
+       context: frontend
     image: synthea-front-docker:latest
     environment:
       - SYNTHEA_SEED=1
@@ -13,8 +13,8 @@ services:
     - "5000:5000" 
     volumes:
     - type: bind
-      source: ./synthea/output/fhir
+      source: ./frontend/output/fhir
       target: /synthea/output/fhir
     - type: bind
-      source: ./synthea/src
+      source: ./frontend/src
       target: /app
