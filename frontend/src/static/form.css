@@ -1,24 +1,20 @@
+h1 {
+    margin-top: 50px;
+}
 
+/* form.html */
 .main {
     margin: 0 auto;
     width: 40%;
 }
 
-.result {
-    margin: 0 auto;
-    width: 60%;
-}
-
-.files {
-    margin-top: 30px;
-    font-family: 'Open Sans';
+.main img {
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
 }
 
 .form-custom {
-    margin-top: 50px;
-}
-
-h1 {
     margin-top: 50px;
 }
 
@@ -30,11 +26,40 @@ h1 {
     border: none;
 }
 
-.download {
-    margin-top: 20px;
-    margin-bottom: 30px;
+/* result.html */
+.result {
+    margin: 0 auto;
+    width: 60%;
+}
+
+.files {
+    margin-top: 30px;
+    font-family: 'Open Sans';
+}
+
+.form-button {
+    margin-top: 30px;
+
+}
+
+.form-inline .form-control {
+    margin-right: 20px!important;
+    height: 40px;
+    width: 300px;
+    font-size: 14px!important;
+} 
+
+.form-inline .sendall-button {
     background-color: #2f445c;
-    width: 200px;
+    color: white;
+    border: none;
+    font-size: 16px!important;
+    height: 40px;
+}
+
+.download-button {
+    background-color: #2f445c;
+    width: 300px;
     height: 40px;
     color: white;
     border: none;
@@ -45,10 +70,9 @@ h1 {
 }
 
 
-.main img {
-    margin-left: auto;
-    margin-right: auto;
-    display: block;
+
+.panel-group {
+    margin-top: 30px!important;
 }
 
 .file {

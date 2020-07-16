@@ -16,10 +16,12 @@
     <div class="result">
         <h1>Synthea Generator</h1>
         <div class="row files">
-            <form action="/result/download" method="POST"  class="form-custom">
-                <input type="submit" class="btn btn-default download" value="Download files">
-            </form>
             
+            <form action="/result" method="POST"  class="form-inline form-button text-center">
+                {{ form.csrf_token }}
+                <div class="form-group">{{ form.url(class="form-control", placeholder='FHIR URL') }}</div>
+                <input type="submit" class="btn btn-default sendall-button" value="Send all to FHIR repository">
+            </form>
             
             <div class="panel-group">
                 {% if files %}

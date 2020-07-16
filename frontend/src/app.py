@@ -2,7 +2,7 @@ import flask
 from flask import Flask, render_template, flash, redirect, request, send_from_directory
 from flask_bootstrap import Bootstrap
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField, IntegerField, SelectField, TextAreaField
+from wtforms import Form, StringField, SubmitField, IntegerField, SelectField, TextAreaField
 from wtforms.validators import DataRequired, Required, Optional
 
 import time
@@ -26,7 +26,10 @@ class SyntheaForm(FlaskForm):
     inputNbrPatient = IntegerField('Number of patient', validators=[DataRequired("Not a valid integer value")])
     properties = TextAreaField('Synthea Properties')
     module = SelectField('Cohort')
-    
+
+class FhirUrlForm(Form):
+    url = StringField('FHIR URL', validators=[DataRequired("Missing URL")], description="FHIR URL")
+
 # Get list of modules in /synthea/src/main/resources/modules folder
 def getModules():
     modules = [('', '')]
@@ -41,7 +44,8 @@ def getModules():
 # Generate synthetic patients with Synthea
 def generateSynthea(seed, nbrPatient, module):
     os.chdir("/synthea/output/fhir")
-    delete_str = "find . -type f -not -name 'makefile' -delete"
+    # delete_str = "find . -type f -not -name 'makefile' -delete"
+    delete_str = "find . -type f -delete"
     status = subprocess.call(delete_str, shell=True)
 
     cmd = './run_synthea'
@@ -66,12 +70,6 @@ def generateSynthea(seed, nbrPatient, module):
     rc = process.poll()
     return rc
 
-    # status = subprocess.call(cmd, shell=True)
-    # if status == 0 : 
-    #     flash('Generation ended successfully')
-    # else :
-    #     flash('There was an error during generation')
-
 # Find generated patient json files
 def findLastGenerated() :
     os.chdir("/synthea/output/fhir")
@@ -80,7 +78,9 @@ def findLastGenerated() :
     (output, err) = p.communicate()
     return output
 
+####################
 ### Flask Routes ###
+####################
 
 @app.route("/", methods=['GET', 'POST'])
 def form():
@@ -111,8 +111,9 @@ def form():
    
     return render_template("form.html", form = syntheaform)
 
-@app.route("/result")
+@app.route("/result", methods=['GET', 'POST'])
 def result():
+    urlForm = FhirUrlForm(request.form)
     output = findLastGenerated()
     files = output.decode().split("\n")
     files.pop()
@@ -126,15 +127,22 @@ def result():
             data.append(file)
             data.append(content)
             files_content.append(data)
-    return render_template("result.html", text = output, files = files_content)
 
-@app.route("/result/download", methods=['GET', 'POST'])
-def get_files():
-    pass
+    if urlForm.validate() and request.method == 'POST':
+        req = request.form
+        url = req.get("url")
+        os.environ["FHIR_URL"] = url
+        os.chdir("/synthea/output/fhir")
+        print(os.environ["FHIR_URL"], flush=True)
+
+        process = subprocess.run(['make'], stdout=subprocess.PIPE, universal_newlines=True)
+
+    return render_template("result.html", text = output, files = files_content, form = urlForm)
+
 
 @app.route("/result/send", methods=['GET', 'POST'])
 def send_to_fhir():
-    pass
+    return 'OK'
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", debug=True)
