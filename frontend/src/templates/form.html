@@ -1,44 +1,96 @@
 {% extends "bootstrap/base.html" %}
 {% import 'bootstrap/wtf.html' as wtf %}
 
-
-{% block javascript %}
-<!-- <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script> -->
-{% endblock %}
-
 {% block styles %}
 {{super()}}
-<link rel="stylesheet" type="text/css" href="form.css">
+<link rel="stylesheet" type="text/css" href="static/form.css">
 <link rel="icon" href="data:,">
+{% endblock %}
+
+
+{% block scripts %}
+<script src="//code.jquery.com/jquery-1.12.4.min.js" integrity="sha256-ZosEbRLbNQzLpnKIkEdrPv7lOy9C27hHQ+Xp8a4MxAQ=" crossorigin="anonymous"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js" integrity="sha256-yr4fRk/GU1ehYJPAs8P4JlTgu0Hdsp4ZKrx8bDEDC3I=" crossorigin="anonymous"></script>
+<script type="text/javascript" charset="utf-8">
+    $(document).ready(function() {
+
+        console.log('test')
+        // Use a "/test" namespace.
+        // An application can open a connection on multiple namespaces, and
+        // Socket.IO will multiplex all those connections on a single
+        // physical channel. If you don't care about multiple channels, you
+        // can set the namespace to an empty string.
+        namespace = '/test';
+
+        // Connect to the Socket.IO server.
+        // The connection URL has the following format, relative to the current page:
+        //     http[s]://<domain>:<port>[/<namespace>]
+        var socket = io(namespace);
+        
+
+        socket.on('my_response', function(msg) {
+            $('#log').append('<br>' + $('<div/>').text(msg.data).html());
+            var modalbody = document.querySelector("#log");
+            modalbody.scrollTop = modalbody.scrollHeight - modalbody.clientHeight;
+        });
+
+        socket.on('redirect', function (msg) {
+            window.location = msg.url;
+        });
+
+        $('form#generate').submit(function(event) {
+            console.log("generate")
+            socket.emit('generate', {seed: $('#seed').val(), nbrPatient : $('#nbrPatient').val(), module : $('#module').val(), properties : $('#properties').val()});
+            $('#exampleModalCenter').show();
+            
+            return false;
+        });
+
+    });
+
+    
+
+</script>
 {% endblock %}
 
 {% block title %}Synthea{% endblock %}
 
 {% block content %}
+
+
     <div class="main">
         <h1>Synthea Generator</h1>
         <div class="row">
             <!-- {{ wtf.quick_form(form) }} -->
-            <form method="POST" action="/" class="form-custom">
+            <form method="POST" action="#" class="form-custom" id='generate'>
                 {{ form.csrf_token }}
-                <div class="form-group">{{ form.inputSeed.label }} {{ form.inputSeed(class_="form-control") }}</div>
-                <div class="form-group">{{ form.inputNbrPatient.label }} {{ form.inputNbrPatient(class_="form-control") }}</div>
-                <div class="form-group">{{ form.module.label }} {{ form.module(class_="form-control") }}</div>
-                <div class="form-group">{{ form.properties.label }} {{ form.properties(class_="form-control", rows="10") }}</div>
-                <input type="submit" class="btn btn-default generate" value="Generate" onclick="$('#loading').show();">
-                
+                <div class="form-group">{{ form.inputSeed.label }} {{ form.inputSeed(class_="form-control", id='seed') }}</div>
+                <div class="form-group">{{ form.inputNbrPatient.label }} {{ form.inputNbrPatient(class_="form-control", id='nbrPatient') }}</div>
+                <div class="form-group">{{ form.module.label }} {{ form.module(class_="form-control", id='module') }}</div>
+                <div class="form-group">{{ form.properties.label }} {{ form.properties(class_="form-control", rows="10", id='properties') }}</div>
+                <input type="submit" class="btn btn-default generate" value="Generate">
             </form>
         </div>
-        <div id="loading" style="display:none;">
-            <div class="alert alert-info alert-dismissible" role="alert">
-                <span>Patients being generated, this may take a few minutes.</span>
-                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-                </button>
+
+        <!-- <button type="button" class="btn btn-default" onclick="$('#exampleModalCenter').show();">
+            Launch demo modal
+        </button> -->
+    
+        <div class="modal" id="exampleModalCenter" role="dialog" >
+            <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLongTitle">Modal title</h5>
+                </div>
+                <div class="modal-body" id="log">
+                </div>
             </div>
-            <img src="{{url_for('static', filename='loader.gif')}}" align="middle" />
-            
+            </div>
         </div>
+    
+
     </div>
+    
+  
     
 {% endblock %}

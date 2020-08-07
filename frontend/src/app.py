@@ -1,9 +1,12 @@
 import flask
-from flask import Flask, render_template, flash, redirect, request, send_from_directory
+from flask import Flask, render_template, flash, redirect, request, send_from_directory, url_for
 from flask_bootstrap import Bootstrap
 from flask_wtf import FlaskForm
 from wtforms import Form, StringField, SubmitField, IntegerField, SelectField, TextAreaField
 from wtforms.validators import DataRequired, Required, Optional
+from flask_socketio import SocketIO, emit, join_room, leave_room, close_room, rooms, disconnect
+from threading import Lock
+
 
 import time
 import os
@@ -15,10 +18,17 @@ import io
 import pathlib
 
 
-app = Flask(__name__, static_url_path='')
+async_mode = None
+
+app = Flask(__name__)
 app.config['SECRET_KEY'] = 'key'
 Bootstrap(app)
 
+socketio = SocketIO(app, async_mode=async_mode)
+thread = None
+thread_lock = Lock()
+
+results = []
 
 # Synthea wtforms 
 class SyntheaForm(FlaskForm):
@@ -59,12 +69,25 @@ def generateSynthea(seed, nbrPatient, module):
     print(cmd, flush=True)
 
     process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    flag_save = False
     while True:
         output = process.stdout.readline()
         if output == '' and process.poll() is not None:
             break
         if output:
-            print(output.strip(), flush=True)
+            line = output.strip().decode('UTF-8')
+            
+            if flag_save : 
+                results.append(line)
+            if line == 'Running with options:' :
+                flag_save = True
+                results.clear()
+            if line.startswith('Records:') :
+                flag_save = False
+
+            print(line, flush=True)
+            socketio.sleep(0.01)
+            socketio.emit('my_response', {'data': line}, namespace='/test')
         else : 
             break
     rc = process.poll()
@@ -77,6 +100,23 @@ def findLastGenerated() :
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
     (output, err) = p.communicate()
     return output
+
+#######################
+### SocketIO Events ###
+#######################
+
+@socketio.on('generate', namespace='/test')
+def generate(message):
+    print("GENERATE", flush=True) 
+    os.chdir("/synthea/src/main/resources")
+    with open('synthea.properties', 'r+') as file:
+        file.truncate(0)
+        file.write(message['properties'])
+        file.close()
+    generateSynthea(message['seed'], message['nbrPatient'], message['module'])
+    print('END GENERATE SYNTHEA', flush=True)
+    print('url_for :',url_for('result'), flush=True)
+    emit('redirect', {'url': url_for('result')})
 
 ####################
 ### Flask Routes ###
@@ -92,27 +132,28 @@ def form():
         file.close()
     syntheaform.properties.data = data
 
-    if syntheaform.validate_on_submit() and request.method == "POST":
-        req = request.form
+    # if syntheaform.validate_on_submit() and request.method == "POST":
+    #     req = request.form
 
-        inputSeed = req.get("inputSeed")
-        inputNbrPatient = req.get("inputNbrPatient")
-        module = req.get('module')
-        properties = req.get('properties')
+    #     inputSeed = req.get("inputSeed")
+    #     inputNbrPatient = req.get("inputNbrPatient")
+    #     module = req.get('module')
+    #     properties = req.get('properties')
 
-        os.chdir("/synthea/src/main/resources")
-        with open('synthea.properties', 'r+') as file:
-            file.truncate(0)
-            file.write(properties)
-            file.close()
+    #     os.chdir("/synthea/src/main/resources")
+    #     with open('synthea.properties', 'r+') as file:
+    #         file.truncate(0)
+    #         file.write(properties)
+    #         file.close()
 
-        generateSynthea(inputSeed, inputNbrPatient, module)
-        return redirect('/result')
+    #     generateSynthea(inputSeed, inputNbrPatient, module)
+    #     return redirect('/result')
    
     return render_template("form.html", form = syntheaform)
 
 @app.route("/result", methods=['GET', 'POST'])
 def result():
+    print(results, flush='True')
     urlForm = FhirUrlForm(request.form)
     output = findLastGenerated()
     files = output.decode().split("\n")
@@ -137,7 +178,7 @@ def result():
 
         process = subprocess.run(['make'], stdout=subprocess.PIPE, universal_newlines=True)
 
-    return render_template("result.html", text = output, files = files_content, form = urlForm)
+    return render_template("result.html", text = output, files = files_content, form = urlForm, log = results)
 
 
 @app.route("/result/send", methods=['GET', 'POST'])
@@ -145,4 +186,4 @@ def send_to_fhir():
     return 'OK'
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", debug=True)
+    socketio.run(app, host="0.0.0.0", debug=True)
